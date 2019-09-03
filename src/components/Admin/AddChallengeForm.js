@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import PreviewSeries from '../PreviewSeries';
+import PreviewSeries from './PreviewSeries';
+import EditChallengeForm from './EditChallengeForm';
+import { toast } from 'react-toastify';
+import ConfirmButton from '../ConfirmButton';
+import { Link } from 'react-router-dom';
 
 const AddChallengeForm = props => {
   const [name, setName] = useState('');
@@ -16,6 +20,9 @@ const AddChallengeForm = props => {
   const [users, setUsers] = useState([]);
   const [organizers, setOrganizers] = useState([]);
   const [newOrganizer, setNewOrganizer] = useState('');
+
+  const [editingChallenge, setEditingChallenge] = useState(false);
+  const [editingSeries, setEditingSeries] = useState(null);
 
   useEffect(() => {
     if (props.challenges.length) {
@@ -36,37 +43,89 @@ const AddChallengeForm = props => {
         .then(result => {
           setUsers(result.data);
         })
-        .catch(error => console.log('users', error.response.data));
+        .catch(error => toast.warn('Failed to load list of users.'));
     }
   }, [props.userService, props.user]);
 
-  const addChallengeOrSeries = event => {
+  useEffect(() => {
+    if (editingSeries) {
+      setSeriesTitle(editingSeries.seriesTitle);
+      setDescription(editingSeries.description ? editingSeries.description : '');
+      setPointBonus(editingSeries.pointBonus);
+      setIcon(editingSeries.icon);
+    }
+  }, [editingSeries]);
+
+  const addOrEdit = async event => {
     event.preventDefault();
-    const newChallenge = {
-      name,
-      startDate,
-      endDate,
-      releaseDate,
-      deadline,
-      pointsGoal,
-      pointBonus,
-      seriesTitle,
-      description,
-      icon,
-      organizers
-    };
-    props.challengeService.add(newChallenge);
+    if (!editingSeries) {
+      const newChallenge = {
+        name,
+        startDate,
+        endDate,
+        releaseDate,
+        deadline,
+        pointsGoal,
+        pointBonus,
+        seriesTitle,
+        description,
+        icon,
+        organizers
+      };
+      try {
+        await props.challengeService.add(newChallenge);
+        toast.success('Challenge or series created.');
+      } catch (error) {
+        toast.warn('Failed to create a challenge or series.');
+      }
+    } else {
+      try {
+        await props.challengeService.update({
+          id: editingSeries.id,
+          seriesTitle,
+          description,
+          pointBonus,
+          icon
+        });
+        toast.success('Series updated.');
+      } catch (error) {
+        toast.warn('Failed to update the series.');
+      }
+    }
   };
 
-  const addOrganizer = event => {
+  const addOrganizer = async event => {
     event.preventDefault();
-    for (let c of props.challenges) {
-      props.challengeService.update({
-        id: c.id,
-        organizers: organizers.concat([newOrganizer])
-      });
+    try {
+      for (let c of props.challenges) {
+        await props.challengeService.update({
+          id: c.id,
+          organizers: organizers.concat([newOrganizer])
+        });
+      }
+      setNewOrganizer('');
+      toast.success('New organizer added.');
+    } catch (error) {
+      toast.warn('Failed to add an organizer.');
     }
-    setNewOrganizer('');
+  };
+
+  const deleteSeries = async () => {
+    try {
+      await props.challengeService.remove({ id: editingSeries.id });
+      toast.success('Series deleted.');
+      reset();
+    } catch (error) {
+      toast.warn('Failed to delete the series.');
+    }
+  };
+
+  const reset = () => {
+    setEditingSeries(null);
+    setSeriesTitle('');
+    setDescription('');
+    setPointBonus(1);
+    setIcon('');
   };
 
   const nameById = id => {
@@ -79,19 +138,36 @@ const AddChallengeForm = props => {
   return (
     <section className="section">
       <div className="container">
+        <div className="tabs">
+          <ul>
+            <li className="is-active">
+              <Link to="/addchallenge">Challenges / Series</Link>
+            </li>
+            <li>
+              <Link to="/addactivity">Activities</Link>
+            </li>
+            <li>
+              <Link to="/addachievement">Achievements</Link>
+            </li>
+          </ul>
+        </div>
         <div className="columns is-centered">
           <div className="column" id="addChallengeForm">
-            <form onSubmit={addChallengeOrSeries}>
-              <h1 className="title is-4">
-                {props.challenges.length
-                  ? `Add a series to ${props.challenges[0].name}`
-                  : 'Add the challenge'}
-              </h1>
-              <h2 className="subtitle is-6">
-                {props.challenges.length
-                  ? `Give the series it's own title, description, point bonus and an icon.`
-                  : 'You will be set as the organizer, can add more later'}
-              </h2>
+            <form onSubmit={addOrEdit}>
+              {!editingSeries ? (
+                <>
+                  <h1 className="title is-4">
+                    {props.challenges.length ? `Add a series` : 'Add the challenge'}
+                  </h1>
+                  <h2 className="subtitle is-6">
+                    {props.challenges.length
+                      ? `Give the series it's own title, description, point bonus and an icon.`
+                      : 'You will be set as the organizer, can add more later'}
+                  </h2>
+                </>
+              ) : (
+                <h1 className="title is-4">Edit the series</h1>
+              )}
 
               <div className={props.challenges.length ? 'is-hidden' : ''}>
                 <div className="field is-grouped">
@@ -104,9 +180,20 @@ const AddChallengeForm = props => {
                       id="name"
                       onChange={({ target }) => setName(target.value)}
                       value={name}
-                      title="All series should share the same challenge name"
-                      readOnly={props.challenges.length !== 0}
+                      required
                     />
+                    <p className="help">
+                      Can use{' '}
+                      <a
+                        href="https://bulma.io/documentation/elements/content/"
+                        title="Bulma Content class documentation"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        a limited set
+                      </a>{' '}
+                      of HTML tags
+                    </p>
                   </div>
                   <div className="control is-expanded">
                     <label className="label" htmlFor="pointsGoal">
@@ -119,7 +206,7 @@ const AddChallengeForm = props => {
                       onChange={({ target }) => setPointsGoal(target.value)}
                       value={pointsGoal}
                       title="All series should share the same points goal"
-                      readOnly={props.challenges.length !== 0}
+                      required
                     />
                   </div>
                 </div>
@@ -135,6 +222,7 @@ const AddChallengeForm = props => {
                       type="date"
                       onChange={({ target }) => setStartDate(target.value)}
                       value={startDate}
+                      required
                     />
                   </div>
 
@@ -149,6 +237,7 @@ const AddChallengeForm = props => {
                       onChange={({ target }) => setEndDate(target.value)}
                       value={endDate}
                       title="Stored with time set at 00:00. If you want the challenge to end on sunday, pick the next monday"
+                      required
                     />
                   </div>
                 </div>
@@ -164,6 +253,7 @@ const AddChallengeForm = props => {
                       onChange={({ target }) => setReleaseDate(target.value)}
                       value={releaseDate}
                       title="The date when the series is revealed to users"
+                      required
                     />
                   </div>
 
@@ -178,6 +268,7 @@ const AddChallengeForm = props => {
                       onChange={({ target }) => setDeadline(target.value)}
                       value={deadline}
                       title="The date for publishing results, ie. last day to save workouts."
+                      required
                     />
                   </div>
                 </div>
@@ -194,6 +285,7 @@ const AddChallengeForm = props => {
                     id="seriesTitle"
                     onChange={({ target }) => setSeriesTitle(target.value)}
                     value={seriesTitle}
+                    required
                   />
                 </div>
               </div>
@@ -202,15 +294,27 @@ const AddChallengeForm = props => {
                   Description
                 </label>
                 <div className="control">
-                  <input
-                    className="input"
+                  <textarea
+                    className="textarea"
                     id="description"
                     onChange={({ target }) => setDescription(target.value)}
                     value={description}
                   />
+                  <p className="help">
+                    Can use{' '}
+                    <a
+                      href="https://bulma.io/documentation/elements/content/"
+                      title="Bulma Content class documentation"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      a limited set
+                    </a>{' '}
+                    of HTML tags
+                  </p>
                 </div>
               </div>
-              <div className="field is-grouped">
+              <div className="field">
                 <div className="control is-expanded">
                   <label className="label" htmlFor="pointBonus">
                     Point bonus factor
@@ -226,7 +330,8 @@ const AddChallengeForm = props => {
                     title="Decimal value, +20% bonus = 1.2"
                   />
                 </div>
-
+              </div>
+              <div className="field">
                 <div className="control is-expanded">
                   <label className="label" htmlFor="icon">
                     FontAwesome icon
@@ -237,12 +342,82 @@ const AddChallengeForm = props => {
                     onChange={({ target }) => setIcon(target.value)}
                     value={icon}
                   />
+                  <p className="help">
+                    For{' '}
+                    <a
+                      href="https://fontawesome.com/icons?d=gallery&s=solid&m=free"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Solid Style
+                    </a>{' '}
+                    icons like{' '}
+                    <a
+                      href="https://fontawesome.com/icons/couch?style=solid"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      fas fa-couch
+                    </a>
+                    , input <strong>couch</strong>
+                    <br />
+                    For{' '}
+                    <a
+                      href="https://fontawesome.com/icons?d=gallery&s=brands&m=free"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Brands Style
+                    </a>{' '}
+                    icons like{' '}
+                    <a
+                      href="https://fontawesome.com/icons/hotjar?style=brands"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      fab fa-hotjar
+                    </a>
+                    , input <strong>fab hotjar</strong>
+                    <br />
+                    For{' '}
+                    <a
+                      href="https://fontawesome.com/icons?d=gallery&s=regular&m=free"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Regular Style
+                    </a>{' '}
+                    icons like{' '}
+                    <a
+                      href="https://fontawesome.com/icons/trash-alt?style=regular"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      far fa-trash-alt
+                    </a>
+                    , input <strong>far trash-alt</strong>
+                  </p>
                 </div>
               </div>
               <div className="control">
-                <button className="button is-info" type="submit">
-                  {props.challenges.length ? 'Add a series' : 'Add new challenge'}
-                </button>
+                {editingSeries ? (
+                  <div className="buttons">
+                    <button className="button is-info">Save changes</button>
+                    <button className="button is-text" onClick={reset}>
+                      Cancel
+                    </button>
+                    <ConfirmButton
+                      icon={['far', 'trash-alt']}
+                      classNames="is-danger is-outlined"
+                      texts={['delete', 'confirm']}
+                      action={() => deleteSeries()}
+                    />
+                  </div>
+                ) : (
+                  <button className="button is-info">
+                    {props.challenges.length ? 'Add a series' : 'Add a new challenge'}
+                  </button>
+                )}
               </div>
             </form>
 
@@ -289,7 +464,30 @@ const AddChallengeForm = props => {
             )}
           </div>
           <div className="column" id="previewOfSeries">
-            <PreviewSeries challenges={props.challenges} />
+            <PreviewSeries challenges={props.challenges} setEditingSeries={setEditingSeries} />
+            <div className="notification is-danger">
+              {editingChallenge ? (
+                <EditChallengeForm
+                  challenges={props.challenges}
+                  challengeService={props.challengeService}
+                  setEditingChallenge={setEditingChallenge}
+                />
+              ) : (
+                <div className="columns">
+                  <div className="column">
+                    <div
+                      className="button is-outlined is-light is-size-7-mobile is-size-7-tablet is-size-6-desktop"
+                      onClick={() => setEditingChallenge(!editingChallenge)}
+                    >
+                      Edit the challenge
+                    </div>
+                  </div>
+                  <div className="column is-7 is-size-7">
+                    Changing the dates after the challenge has started can cause issues.
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

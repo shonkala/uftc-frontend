@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import moment from 'moment';
+import Icon from './Icon';
 
-const Ikonipallo = ({ series, iconName, bgColor, handleClick, isSelected, isActiveChallenge }) => {
+const Ikonipallo = ({ series, iconName, handleClick, isSelected, isActiveChallenge }) => {
   let styles = {
-    width: '33vw',
+    width: '20vw',
     minWidth: '110px',
     maxWidth: '200px',
-    height: '33vw',
+    height: '20vw',
     minHeight: '110px',
     maxHeight: '200px',
-    borderRadius: '33vw',
+    borderRadius: '20vw',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -25,21 +25,16 @@ const Ikonipallo = ({ series, iconName, bgColor, handleClick, isSelected, isActi
       borderWidth: '6px'
     };
   }
-  const bulmaClass =
-    'has-text-centered has-text-white-ter is-size-6-mobile is-size-5-tablet is-size-4-desktop is-size-3';
-  let customClass = 'series-button-hoverable';
-  if (isActiveChallenge) customClass = 'series-button';
-  const className = bulmaClass + ' ' + customClass;
 
   return (
     <div
       style={styles}
-      className={className}
+      className="red-circle-gradient is-clickable has-text-centered has-text-white-ter is-size-6-mobile is-size-5-tablet is-size-4-desktop is-size-3"
       onClick={() => {
         handleClick();
       }}
     >
-      <FontAwesomeIcon icon={iconName} size="2x" />
+      <Icon icon={iconName} size="2x" />
       <p>{series.seriesTitle}</p>
       <p style={{ color: '#000000', fontWeight: 'bold' }} title="participants">
         {series.participants ? series.participants : <>&nbsp;</>}
@@ -47,14 +42,6 @@ const Ikonipallo = ({ series, iconName, bgColor, handleClick, isSelected, isActi
     </div>
   );
 };
-
-const BraceLeft = () => (
-  <span style={{ fontFamily: 'Verdana', color: '#ff2457', fontSize: 'larger' }}>&#x7b;</span>
-);
-
-const BraceRight = () => (
-  <span style={{ fontFamily: 'Verdana', color: '#ff2457', fontSize: 'larger' }}>&#x7d;</span>
-);
 
 const ChallengeSelectView = props => {
   const [selectedSeries, setSelectedSeries] = useState(null);
@@ -80,7 +67,7 @@ const ChallengeSelectView = props => {
   const showActiveChallenge = () => (
     <>
       <div className="ambientia-block" />
-      <div> Your challenge</div>
+      <div>Your series</div>
     </>
   );
 
@@ -97,16 +84,19 @@ const ChallengeSelectView = props => {
 
   const challengeSelections = challenges =>
     challenges.map(c => (
-      <div className="column is-4 has-text-centered " key={c.id}>
+      <div className="column has-text-centered " key={c.id}>
         <Ikonipallo
           series={c}
           iconName={c.icon || 'stopwatch'}
-          bgColor="#ff2457"
           handleClick={handleClickOnBall(c.id)}
           isSelected={c.id === selectedSeries}
           isActiveChallenge={c.id === props.user.activeChallenge}
         />
-        <div className="is-size-6-mobile is-size-5-tablet is-size-4">{c.description || ''}</div>
+        <div
+          dangerouslySetInnerHTML={{ __html: c.description }}
+          className="content is-size-6-mobile is-size-6-tablet is-size-5-desktop"
+          style={{ padding: '0.5em' }}
+        />
         <div className="has-text-weight-bold is-size-6-mobile is-size-5-tablet is-size-4">
           {props.user && props.user.activeChallenge === c.id && showActiveChallenge()}
         </div>
@@ -121,16 +111,36 @@ const ChallengeSelectView = props => {
 
   return (
     <>
-      <section className="section has-text-centered">
-        <h1 className="title is-3 ">Welcome to UFTC!</h1>
+      <section className="section has-text-centered" style={{ paddingBottom: '0.5em' }}>
+        <h1 className="title is-3 ">Welcome to the UFTC!</h1>
+        <h2 className="subtitle is-5">Ultimate Functional Training Challenge</h2>
+        <p
+          className="is-size-7-mobile is-size-6-tablet is-size-5-desktop"
+          style={{ minWidth: '250px', maxWidth: '70%', margin: 'auto' }}
+        >
+          UFTC is a fun exercise competition where the participants record their workouts and earn
+          points towards the challenge goal.
+          <br />
+          <br />
+          Achieve enough points from a <strong>single activity</strong> or during a special{' '}
+          <strong>one-day-challenge</strong> and you'll be rewarded with badges.
+        </p>
       </section>
       {challengeNames.map(challengeName => (
-        <section className="section has-text-centered " key={challengeName}>
-          <h1 className="is-size-4">
-            <BraceLeft /> {challengeName} <BraceRight />
-          </h1>
+        <section className="section has-text-centered" key={challengeName}>
+          <div className="columns is-centered">
+            <div className="column is-8-tablet is-7-desktop is-6-widescreen">
+              <div
+                className="notification is-danger is-size-6-mobile is-size-5-tablet is-size-4-desktop"
+                dangerouslySetInnerHTML={{ __html: challengeName }}
+              ></div>
+            </div>
+          </div>
+
           <br />
-          <h2 className="title is-5">Select series</h2>
+          <h2 className="title is-size-5-mobile is-size-4-tablet">
+            Challenger, choose your series:
+          </h2>
 
           <div className="columns is-centered">
             {challengeSelections(challengesToShow.filter(c => c.name === challengeName))}

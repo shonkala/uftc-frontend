@@ -1,11 +1,12 @@
 import React from 'react';
 import Chart from 'react-apexcharts';
 import moment from 'moment';
+import { isMobile } from 'react-device-detect';
 
 const PlaceholderCirle = ({ text }) => {
   const styles = {
-    width: 300,
-    height: 300,
+    width: isMobile ? 200 : 300,
+    height: isMobile ? 200 : 300,
     borderRadius: 150,
     borderWidth: 10,
     borderStyle: 'solid',
@@ -17,7 +18,7 @@ const PlaceholderCirle = ({ text }) => {
   };
 
   return (
-    <div style={styles} className="is-size-5">
+    <div style={styles} className="is-size-6-mobile is-size-5">
       {text}
     </div>
   );
@@ -96,11 +97,11 @@ const CircleProgress = ({ workouts, activities, challenge }) => {
       show: true,
       floating: true,
       fontFamily: 'Raleway',
-      fontSize: '20px',
+      fontSize: isMobile ? '15px' : '20px',
       position: 'left',
-      width: 200,
+      width: isMobile ? 150 : 200,
       offsetX: -20,
-      offsetY: 17,
+      offsetY: isMobile ? 0 : 17,
       labels: {
         useSeriesColors: true
       },
@@ -121,8 +122,8 @@ const CircleProgress = ({ workouts, activities, challenge }) => {
   };
 
   return (
-    <div className="has-text-right" style={{ width: 400, margin: 'auto' }}>
-      <Chart options={options} type={'radialBar'} series={series} height="400" />
+    <div className="has-text-right" style={{ width: isMobile ? 300 : 400, margin: 'auto' }}>
+      <Chart options={options} type={'radialBar'} series={series} height={isMobile ? 300 : 400} />
     </div>
   );
 };

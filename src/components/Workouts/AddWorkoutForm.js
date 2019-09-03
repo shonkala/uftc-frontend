@@ -19,6 +19,19 @@ const AddWorkoutForm = props => {
     }
   }, [props.workouts, props.activity]);
 
+  const checkDate = () => {
+    if (moment(date).isBefore(moment(props.challenge.startDate), 'day')) {
+      return false;
+    }
+    if (moment(date).isAfter(moment(), 'day')) {
+      return false;
+    }
+    if (moment(date).isAfter(moment(props.challenge.endDate), 'day')) {
+      return false;
+    }
+    return true;
+  };
+
   const handleMoreClick = event => {
     event.preventDefault();
     setAmount(+amount + 1);
@@ -55,15 +68,11 @@ const AddWorkoutForm = props => {
 
   const submit = event => {
     event.preventDefault();
-
-    const dateString = moment(date).format('YYYY-MM-DD');
-
     const workout = {
-      amount: amount,
-      date: dateString,
-      activity: props.activity.id
+      amount,
+      date: moment(date).format('YYYY-MM-DD')
     };
-    props.addWorkout(workout);
+    props.addWorkout(props.activity.id, workout);
   };
 
   const highlight = ({ date, view }) => {
@@ -122,7 +131,13 @@ const AddWorkoutForm = props => {
 
       <div className="field">
         <p className="control">
-          <button className="button is-success is-fullwidth is-medium">Save a workout</button>
+          <button
+            className="button is-success is-fullwidth is-medium"
+            disabled={!checkDate()}
+            title={!checkDate() ? 'Selected date is not valid for this challenge' : ''}
+          >
+            Save a workout
+          </button>
         </p>
       </div>
       <div className="field">

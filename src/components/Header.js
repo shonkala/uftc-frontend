@@ -9,7 +9,7 @@ const Header = props => {
     <nav className="navbar has-text-weight-bold is-size-5-mobile is-size-5-tablet is-size-4-desktop">
       <div className="container">
         <div className="navbar-brand">
-          <Link className="navbar-item" to="/">
+          <Link className="navbar-item" to="/selectseries">
             <Logo width={100} height={35} />
           </Link>
           <div
@@ -24,7 +24,11 @@ const Header = props => {
             <span aria-hidden="true" />
           </div>
         </div>
-        <div id="navMenu" className={`navbar-menu ${burgerActive && 'is-active'}`}>
+        <div
+          id="navMenu"
+          className={`navbar-menu is-size-6-mobile is-size-5-tablet  ${burgerActive &&
+            'is-active'}`}
+        >
           <div className="navbar-start">
             <NavLink
               className="navbar-item has-text-white"
@@ -48,11 +52,25 @@ const Header = props => {
               leaderboard
             </NavLink>
             <NavLink
+              className="navbar-item has-text-white"
+              to="/topfives"
+              activeClassName="is-active has-text-dark"
+            >
+              top5
+            </NavLink>
+            <NavLink
               className="navbar-item has-text-white is-hidden-tablet"
               to="/updateuser"
               activeClassName="is-active has-text-dark"
             >
-              update user
+              profile
+            </NavLink>
+            <NavLink
+              className="navbar-item has-text-white is-hidden-tablet"
+              to="/about"
+              activeClassName="is-active has-text-dark"
+            >
+              about
             </NavLink>
           </div>
           <div className="navbar-end">

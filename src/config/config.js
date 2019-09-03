@@ -24,15 +24,4 @@ const locations = {
   Tartu: '#26a69a'
 };
 
-// list of manually added and cleaned SVG files
-const icons = [
-  'icon.svg',
-  'cycling.svg',
-  'kettlebell.svg',
-  'plank.svg',
-  'pullup.svg',
-  'pushup.svg',
-  'walking.svg'
-];
-
-export { apiUrls, locations, icons };
+export { apiUrls, locations };

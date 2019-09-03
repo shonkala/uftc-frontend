@@ -27,9 +27,10 @@ const ChallengeTitle = ({ challenge }) => {
 
   return (
     <div className="is-size-4 is-size-3-fullhd">
-      <span style={{ fontFamily: 'Verdana', color: '#ff2457', fontSize: 'larger' }}>&#x7b;</span>{' '}
-      {challenge.name}{' '}
-      <span style={{ fontFamily: 'Verdana', color: '#ff2457', fontSize: 'larger' }}>&#x7d;</span>
+      <div
+        className="notification is-info content"
+        dangerouslySetInnerHTML={{ __html: challenge.name }}
+      ></div>
       {isOngoing ? (
         <div className="columns is-gapless is-vcentered is-mobile">
           <div className="column is-9">
@@ -47,34 +48,39 @@ const ChallengeTitle = ({ challenge }) => {
           </div>
         </div>
       ) : (
-        <p>{challengeTiming(challenge)}</p>
+        <p className="is-size-6" style={{ margin: '1em' }}>
+          {challengeTiming(challenge)}
+        </p>
       )}
-      <div className="field is-grouped is-grouped-multiline">
+      <div className="field is-grouped is-grouped-multiline" style={{ padding: '1vw' }}>
         <div className="control">
           <div className="tags has-addons are-medium">
-            <span className="tag is-dark">Start date</span>
-            <span className="tag is-info">{moment(challenge.startDate).format('YYYY-MM-DD')}</span>
+            <span className="tag is-dark">Starts</span>
+            <span className="tag is-info">{moment(challenge.startDate).format('MMM Do')}</span>
           </div>
         </div>
-
         <div className="control">
-          <div className="tags has-addons are-medium">
-            <span className="tag is-dark">End date</span>
-            <span className="tag is-info">{moment(challenge.endDate).format('YYYY-MM-DD')}</span>
+          <div className="tags are-medium has-addons">
+            <span className="tag is-dark">Ends</span>
+            <span className="tag is-info">{moment(challenge.endDate).format('MMM Do')}</span>
           </div>
         </div>
-      </div>
-      <div className="field is-grouped is-grouped-multiline">
         <div className="control">
           <div className="tags has-addons are-medium">
-            <span className="tag is-dark">Points goal</span>
+            <span className="tag is-dark">Goal</span>
             <span className="tag is-warning">{challenge.pointsGoal}</span>
           </div>
         </div>
         <div className="control">
           <div className="tags has-addons are-medium">
-            <span className="tag is-dark">Active series</span>
+            <span className="tag is-dark">Series</span>
             <span className="tag is-success">{challenge.seriesTitle}</span>
+          </div>
+        </div>
+        <div className="control">
+          <div className="tags has-addons are-medium">
+            <span className="tag is-dark">Participants</span>
+            <span className="tag is-success">{challenge.participants}</span>
           </div>
         </div>
       </div>

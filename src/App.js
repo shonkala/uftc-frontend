@@ -12,7 +12,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import { Badge } from './components/BadgesView';
 import { apiUrls } from './config/config';
-import { checkAchievements } from './badges/utils';
+import { checkAchievements, checkDailyChallenges } from './utils/badges';
 import Routes from './Routes';
 
 import './App.css';
@@ -42,32 +42,34 @@ const App = props => {
         .get()
         .then(result => {
           setWorkouts(result.data);
-          //console.log('workouts', result.data);
         })
-        .catch(error => console.log('workouts', error.response.data));
+        .catch(error => toast.warn('Failed to load your workouts.'));
     }
   }, [user]);
 
   const updateUser = updatedUser => {
-    userService.update(updatedUser).then(response => {
-      const newUserState = { token: user.token, ...response.data };
-      setUser(newUserState);
-      localStorage.setItem('loggedUser', JSON.stringify(newUserState));
-    });
+    userService
+      .update(updatedUser)
+      .then(response => {
+        const newUserState = { token: user.token, ...response.data };
+        setUser(newUserState);
+        localStorage.setItem('loggedUser', JSON.stringify(newUserState));
+        toast.success('User profile updated.');
+      })
+      .catch(error => toast.warn('Failed to update user profile.'));
   };
 
-  const addWorkout = workout => {
+  const addWorkout = (activityId, workout) => {
     if (user.activeChallenge) {
       const myBadgesBefore = checkAchievements(
         workouts,
         activities,
         achievements,
         activeChallenge()
-      );
+      ).concat(checkDailyChallenges(workouts, activities, achievements, activeChallenge()));
       workoutService
-        .add(workout)
+        .add(activityId, workout)
         .then(response => {
-          //console.log('response.data', response.data);
           let newWorkouts;
           if (
             workouts.length === 0 ||
@@ -78,7 +80,6 @@ const App = props => {
             const workoutsWithNew = workouts.map(w =>
               w.id !== response.data.id ? w : response.data
             );
-            //console.log(workoutsWithNew, workoutsWithNew);
             newWorkouts = workoutsWithNew;
           }
           setWorkouts(newWorkouts);
@@ -88,15 +89,13 @@ const App = props => {
             activities,
             achievements,
             activeChallenge()
-          );
+          ).concat(checkDailyChallenges(newWorkouts, activities, achievements, activeChallenge()));
           if (myBadgesAfter.length > myBadgesBefore.length) {
             const newBadges = myBadgesAfter.filter(x => !myBadgesBefore.includes(x));
             badgeAlert(newBadges);
           }
         })
-        .catch(error => {
-          console.log('addWorkout', error.response.data);
-        });
+        .catch(error => toast.warn('Failed to save a workout.'));
     } else {
       toast.warn('Workout not saved! Please select a challenge first.');
     }
@@ -109,7 +108,7 @@ const App = props => {
         activities,
         achievements,
         activeChallenge()
-      );
+      ).concat(checkDailyChallenges(workouts, activities, achievements, activeChallenge()));
       workoutService
         .update(workout)
         .then(response => {
@@ -123,15 +122,15 @@ const App = props => {
             activities,
             achievements,
             activeChallenge()
+          ).concat(
+            checkDailyChallenges(workoutsWithNew, activities, achievements, activeChallenge())
           );
           if (myBadgesAfter.length > myBadgesBefore.length) {
             const newBadges = myBadgesAfter.filter(x => !myBadgesBefore.includes(x));
             badgeAlert(newBadges);
           }
         })
-        .catch(error => {
-          console.log('updateWorkout', error.response.data);
-        });
+        .catch(error => toast.warn('Failed to update the workout.'));
     } else {
       toast.warn('Workout not saved! Please select a challenge first.');
     }
@@ -153,9 +152,7 @@ const App = props => {
             toast.success('Workout instance deleted.');
           }
         })
-        .catch(error => {
-          console.log('deleteWorkoutInstance', error.response.data);
-        });
+        .catch(error => toast.warn('Failed to delete the workout instance.'));
     } else {
       toast.warn('Workout instance not deleted! Please select a challenge first.');
     }
@@ -172,7 +169,6 @@ const App = props => {
         props.history.push('/');
       })
       .catch(error => {
-        console.log('login', error.response.data);
         toast.error('Login failed.');
       });
   };
@@ -184,7 +180,6 @@ const App = props => {
         login(userDetails);
       })
       .catch(error => {
-        console.log('register', error.response.data);
         toast.error('Failed to create an account.');
       });
   };
@@ -214,29 +209,6 @@ const App = props => {
     return undefined; // components check for undefined, not null
   };
 
-  // todo: more than 1 background image?
-  const background = () => {
-    if (!isAuthenticated()) {
-      if(props.location.pathname.startsWith('/passwordreset')) {
-        return '';
-      }
-      return 'kettlebeach';
-    }
-    return '';
-  };
-
-  // todo: add other colors
-  const gradient = () => {
-    const path = props.location.pathname;
-    switch (path) {
-      default:
-        // the reset token is added to this, so startsWith()
-        if (path.startsWith('/passwordreset')) {
-          return 'blue-gradient';
-        }
-        return '';
-    }
-  };
   // styles
   const MySwal = withReactContent(Swal);
   const badgeAlert = achs => {
@@ -265,9 +237,9 @@ const App = props => {
   };
 
   return (
-    <div className={`site ${background()}`}>
-      <div className={`main ${gradient()}`}>
-        {isAuthenticated() && <Header logout={logout} />}
+    <>
+      {isAuthenticated() && <Header logout={logout} />}
+      <div className="push-footer-to-bottom">
         <Routes
           user={user}
           updateUser={updateUser}
@@ -288,10 +260,10 @@ const App = props => {
           activityService={activityService}
           userService={userService}
         />
-        <ToastContainer pauseOnFocusLoss={false} position="bottom-right" />
-        {isAuthenticated() && <Footer />}
       </div>
-    </div>
+      <ToastContainer pauseOnFocusLoss={false} position="bottom-right" />
+      {isAuthenticated() && <Footer />}
+    </>
   );
 };
 export default withRouter(App);
